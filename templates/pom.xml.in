@@ -9,6 +9,9 @@
 	<description>${PROJECT_DESCRIPTION}</description>
 	<properties>
 		<install.dir>${project.basedir}/lib</install.dir>
+		<maven.compiler.source>1.6</maven.compiler.source>
+		<maven.compiler.target>1.6</maven.compiler.target>
+		<javaVersion>1.6</javaVersion>
 	</properties>
 	<dependencies>
 ${DEPENDENCIES}
@@ -120,9 +123,29 @@ ${DEPENDENCIES}
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.1</version>
 				<configuration>
-					<source>1.7</source>
-					<target>1.7</target>
+					<source>${maven.compiler.source}</source>
+					<target>${maven.compiler.target}</target>
 				</configuration>
+			</plugin>
+			<plugin>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<version>2.4.1</version>
+				<configuration>
+					<descriptorRefs>
+						<descriptorRef>jar-with-dependencies</descriptorRef>
+					</descriptorRefs>
+					<finalName>${project.artifactId}</finalName>
+					<appendAssemblyId>false</appendAssemblyId>
+				</configuration>
+				<executions>
+					<execution>
+						<id>make-assembly</id>
+						<phase>package</phase>
+						<goals>
+							<goal>single</goal>
+						</goals>
+					</execution>
+				</executions>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -149,7 +172,7 @@ ${DEPENDENCIES}
 							<artifactId>maven-checkstyle-plugin</artifactId>
 							<version>2.17</version>
 							<configuration>
-								<configLocation>${basedir}/files/Petco-Checkstyle.xml</configLocation>
+								<configLocation>${basedir}/files/Checkstyle.xml</configLocation>
 								<encoding>UTF-8</encoding>
 								<failsOnError>true</failsOnError>
 							</configuration>
