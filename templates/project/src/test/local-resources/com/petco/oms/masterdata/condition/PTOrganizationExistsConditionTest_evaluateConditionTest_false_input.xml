@@ -1,0 +1,41 @@
+<Organization InventoryKeptExternally="N"
+	CatalogOrganizationCode="PETCOUS" CapacityOr-ganizationCode="PETCOUS"
+	DefaultPaymentRuleId="DEFAULT" InventoryOrganiza-tionCode="PETCOSTOREUS"
+	InventoryPublished="Y" IsLegalEntity="N" Locale-Code="en_US_EST"
+	Operation="Manage" OrganizationCode="581" OrganizationName="581"
+	ParentOrganizationCode="PETCOSTOREUS" PrimaryEnterpriseKey="PETCOSTOREUS"
+	Re-quiresChainedOrder="Y" PaymentProcessingReqd="Y">
+	<CorporatePersonInfo AddressLine1="11160 Rancho Carmel Dr"
+		AddressLine2="" Ad-dressLine3="" AddressLine4="" AddressLine5=""
+		AddressLine6="" AlternateEmailID="" Beeper="" City="San Diego"
+		Company="PETCOSTOREUS" Country="US" DayFaxNo="(858) 451-8347"
+		Day-Phone="(858) 451-8347" Department="" EMailID="" ErrorTxt=""
+		EveningFaxNo="(858) 451-8347" EveningPhone="(858) 451-8347" FirstName="CARAMELMOUNTAINRANCH-581"
+		HttpUrl="" JobTi-tle="" LastName="" Latitude="-17.50" Longitude="32.70"
+		MiddleName="" MobilePhone="" Other-Phone="" PersonID=""
+		PreferredShipAddress="" State="CA" Suffix="" Title="" ZipCode="92128" />
+	<ContactPersonInfo AddressLine1="11160 Rancho Carmel Dr"
+		AddressLine2="" Address-Line3="" AddressLine4="" AddressLine5=""
+		AddressLine6="" AlternateEmailID="" Beeper="" City="San Diego"
+		Company="PETCOSTOREUS" Country="US" DayFaxNo="(858) 451-8347"
+		Day-Phone="(858) 451-8347" Department="" EMailID="" ErrorTxt=""
+		EveningFaxNo="(858) 451-8347" EveningPhone="(858) 451-8347" FirstName="CARAMELMOUNTAINRANCH-581"
+		HttpUrl="" JobTi-tle="" LastName="" Latitude="-17.50" Longitude="32.70"
+		MiddleName="" MobilePhone="" Other-Phone="" PersonID=""
+		PreferredShipAddress="" State="CA" Suffix="" Title="" ZipCode="92128" />
+	<BillingPersonInfo AddressID="" AddressLine1="11160 Rancho Carmel Dr"
+		Address-Line2="" AddressLine3="" AddressLine4="" AddressLine5=""
+		AddressLine6="" AlternateEmailID="" Beeper="" City="San Diego"
+		Company="PETCOSTOREUS" Country="US" DayFaxNo="(858) 451-8347"
+		DayPhone="(858) 451-8347" Department="" EMailID="" ErrorTxt=""
+		EveningFaxNo="(858) 451-8347" EveningPhone="(858) 451-8347" FirstName="CARAMELMOUNTAINRANCH-581"
+		HttpUrl="" JobTitle="" LastName="" Latitude="-17.50" Longitude="32.70"
+		MiddleName="" Mo-bilePhone="" OtherPhone="" PersonID=""
+		PreferredShipAddress="" State="CA" Suffix="" Title="" ZipCode="92128" />
+	<Node InventoryTracked="Y" ActivateFlag="Y" Inventorytype="TRACK"
+		IsFulfillment-Node="Y" NodeType="Store" ShipNode="581" />
+	<OrgRoleList>
+		<OrgRole RoleKey="SELLER" />
+		<OrgRole RoleKey="NODE" />
+	</OrgRoleList>
+</Organization>

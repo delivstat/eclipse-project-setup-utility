@@ -1,0 +1,257 @@
+<project name="Build Script to create the Eclipse Project for a Sterling Instance." default="all" basedir=".">
+	<property name="template.dir" value="${basedir}/templates"/>
+	<property name="tmp.dir" value="${basedir}/tmp"/>
+	<property file="build.properties" />
+	<property name="sterling.cfg.file" value="${INSTALL_DIR}/properties/AGENTDynamicclasspath.cfg"/>
+	<property name="tmp.cfg.file" value="${basedir}/tmp/tmp.cfg"/>
+	<taskdef resource="net/sf/antcontrib/antcontrib.properties">
+		<classpath>
+			<pathelement location="${basedir}/antlib/ant-contrib.jar"/>
+		</classpath>
+	</taskdef>
+	<scriptdef name="substring" language="javascript" description="Macro to do SubString.">
+		<attribute name="text" />
+		<attribute name="start" />
+		<attribute name="end" />
+		<attribute name="property" />
+		<![CDATA[
+       var text = attributes.get("text");
+       var start = attributes.get("start");
+       var end = attributes.get("end") || text.length();
+       project.setProperty(attributes.get("property"), text.substring(start, end));
+     ]]>
+	</scriptdef>
+	<scriptdef name="indexOf" language="javascript" description="Macro to get IndexOf.">
+		<attribute name="text" />
+		<attribute name="value" />
+		<attribute name="property" />
+		<![CDATA[
+       var text = attributes.get("text");
+       var value = attributes.get("value");
+       project.setProperty(attributes.get("property"), text.indexOf(value));
+     ]]>
+	</scriptdef>
+	<scriptdef name="strLength" language="javascript" description="Macro to get String Length.">
+		<attribute name="text" />
+		<attribute name="property" />
+		<![CDATA[
+       var text = attributes.get("text");
+       project.setProperty(attributes.get("property"), text.length);
+     ]]>
+	</scriptdef>
+	<scriptdef name="createDependencyString" language="javascript" description="Macro to create the dependency list.">
+		<attribute name="cfgval" />
+		<attribute name="property" />
+		<attribute name="jarignorelist"/>
+		<attribute name="installdir"/>
+		<![CDATA[
+       var cfgval = attributes.get("cfgval");
+	   var jarignorelist = attributes.get("jarignorelist");
+	   var installdir = new String(attributes.get("installdir"));
+	   installdir = installdir.replace(/\\/g,'/');
+	   var dependencyList = cfgval.split("\n");
+	   var dependencyString = "";
+	   var depTemplate = '		<dependency>\n'
+			+'			<artifactId>{0}</artifactId>\n'
+			+'			<groupId>{1}</groupId>\n'
+			+'			<version>1.0</version>\n'
+			+'			<scope>system</scope>\n'
+			+'			<systemPath>{2}</systemPath>\n'
+			+'		</dependency>\n';
+		for (i = 0; i < dependencyList.length; i++) {
+			var d = dependencyList[i];
+			print (d);
+			var index = d.indexOf("=");
+			var dlength = d.length();
+			print("index:" + index);
+			print("dlength:" + dlength);
+			var jarPath = d.substring(index+1,dlength);
+			print("jarPath:" + jarPath); 
+			print("jar check:" + ( dlength == 0 || !jarPath.endsWith('.jar') ) );
+			if (dlength == 0 || !jarPath.endsWith('.jar')) {
+				continue;
+			}
+			jarPath = new String(jarPath);
+			jarPath = jarPath.replace(/\\/g,'/');
+			var ary = jarPath.split('/');
+			var name = (new String(ary[ary.length -1])).replace('\n','');
+			var jariglist = jarignorelist.split(',');
+			print("jariglist:" + jariglist);
+			var check = false;
+			for (j=0; j< jariglist.length; j++) {
+				if (name==jariglist[j]) {
+					check = true;
+				}
+			}
+			if (name === 'serializer.jar' || name === 'xalan.jar' || name === 'xercesImpl.jar' || name === 'xml-apis.jar') {
+				jarPath = '${install.dir}/jdk/jre/lib/endorsed/' + name;
+			}
+			if (check == true) {
+				continue;
+			}
+			print ("Jar Path: " + jarPath);
+			
+			jarPath = jarPath.replace(installdir,"${install.dir}");
+			print ("Jar Path: " + jarPath);
+			print ("Jar Name: " + name);
+			dependencyString += depTemplate.replace("{0}",name).replace("{1}",name).replace("{2}",jarPath);
+	   }
+		print (dependencyString);
+       project.setProperty(attributes.get("property"), dependencyString);
+     ]]>
+	</scriptdef>
+	<scriptdef name="createCfgFile" language="javascript" description="Macro to create the classpath CFG file.">
+		<attribute name="cfgval" />
+		<attribute name="projectdir" />
+		<attribute name="property" />
+		<![CDATA[
+       var cfgval = attributes.get("cfgval");
+	   var projectdir = attributes.get("projectdir");
+	   cfgval='VENDOR_JAR='+projectdir+'/target/classes\n'+cfgval;
+	   cfgval='VENDOR_JAR='+projectdir+'/target/test-classes\n'+cfgval;
+	   print(cfgval);
+       project.setProperty(attributes.get("property"), cfgval);
+     ]]>
+	</scriptdef>
+	<target name="all" depends="clean,buildAgentJar,installAgent,movejars,createDependencies,createCfgFile,anttemplate,createProject,deployToWS"  description="Default Target."/>
+	<target name="deployToWS">
+		<mkdir dir="${WS_DIR}/${PROJECT_NAME}/lib"/>
+		<move todir="${WS_DIR}/${PROJECT_NAME}/lib/jar">
+		  <fileset dir="/tmp/agentjar/lib/jar"/>
+		</move>
+		<move todir="${WS_DIR}/${PROJECT_NAME}/lib/dbjar">
+		  <fileset dir="/tmp/agentjar/lib/dbjar"/>
+		</move>
+		<move todir="${WS_DIR}/${PROJECT_NAME}/lib/jdk">
+		  <fileset dir="/tmp/agentjar/lib/jdk"/>
+		</move>
+		<move todir="${WS_DIR}/${PROJECT_NAME}/lib/properties">
+		  <fileset dir="/tmp/agentjar/properties"/>
+		</move>
+	</target>
+	
+	<target name="buildAgentJar" description="Build Agent Jar">
+		<exec executable="${INSTALL_DIR}/bin/sci_ant.sh" dir="${INSTALL_DIR}/bin">
+			<arg line="-f  ${INSTALL_DIR}/properties/buildAgent.xml"/>
+		</exec>
+	</target>
+	<target name="installAgent" description="Install Agent Jar">
+		<delete dir="/tmp/agentjar" failonerror="false"/>
+		<mkdir dir="/tmp/agentjar"/>
+		<copy todir="/tmp/agentjar/">
+		  <fileset dir="${INSTALL_DIR}/external_deployments/"/>
+		  <globmapper from="*.jar" to="agent.jar"/>
+		</copy>
+		<exec executable="${INSTALL_DIR}/jdk/bin/java" failonerror="false" dir="/tmp/agentjar">
+			<arg value="-jar"/>
+			<arg value="agent.jar"/>
+			<arg value="TMPJAR"/>
+		</exec>
+		<delete dir="/tmp/agentjar.agent.jar" failonerror="false"/>
+	</target>
+	<target name="clean" description="Clean the tmp Directory.">
+		<delete dir="${tmp.dir}"/>
+	</target>
+	<target name="movejars" description="If Agent Build then move jars to INSTALL_DIR/jar directory." if="${IS_AGENT}">
+		<copy todir="${INSTALL_DIR}">
+			<fileset dir="${INSTALL_DIR}/lib"/>
+		</copy>
+	</target>
+	<target name="anttemplate" description="Target to create the files from the teamplate.">
+		<property name="dir.in"  value="${template.dir}"/>
+		<property name="dir.out" value="${tmp.dir}"/>
+		<echo>dir.in=${dir.in}, dir.out=${dir.out}</echo>
+		<tstamp>
+			<format property="SYSDATE" pattern="dd-MMM-yyyy HH:mm:ss"/>	
+		</tstamp>
+		<mkdir dir="${dir.out}"/>
+		<copy todir="${dir.out}" verbose="true" overwrite="true" failonerror="true">
+			<fileset dir="${dir.in}">
+				<include name="**/*.in"/>
+			</fileset>
+			<mapper>
+				<globmapper from="*.in" to="*"/>
+			</mapper>
+			<filterchain>
+				<expandproperties>
+					<propertyset negate="true">
+						<propertyref name="basedir" />
+					</propertyset>
+				</expandproperties>
+			</filterchain>
+		</copy>
+	</target>
+	<target name="createDependencies" description="Target to dependencies to add to the pom.xml.">
+		<copy file="${sterling.cfg.file}" tofile="${tmp.cfg.file}"/>
+		<loadfile property="cfgfile" srcfile="${tmp.cfg.file}"/>
+		<foreach list="${wars}" param="app" target="addWarJars">
+		</foreach>
+		<foreach list="${jardirs}" param="dirName" target="wrapperBeforeDoStuffWithFile">
+			<param name="cfgfile" value="${cfgfile}"/>
+		</foreach>
+		<loadfile property="cfgfileUpdated" srcfile="${tmp.cfg.file}"/>
+		<createDependencyString cfgval="${cfgfileUpdated}" property="DEPENDENCIES" jarignorelist="${jarignorelist}" installdir="${INSTALL_DIR}"/>
+	</target>
+	<target name="addWarJars" description="Add Jars in the WEB-INF/lib jars." if="${wars}">
+		<basename property="appName" file="${app}" />
+		<antcall target="addJarsToCfg">
+			<param name="directory" value="${INSTALL_DIR}/repository/eardata/${appName}/war/WEB-INF/lib"/>
+		</antcall>
+	</target>
+	<target name="createProject" description="Creates the Maven Project Directory with pom.xml which can be imported from eclipse.">
+		<mkdir dir="${WS_DIR}/${PROJECT_NAME}"/>
+		<mkdir dir="${WS_DIR}/${PROJECT_NAME}/src/main/java"/>
+		<mkdir dir="${WS_DIR}/${PROJECT_NAME}/src/main/resources"/>
+		<mkdir dir="${WS_DIR}/${PROJECT_NAME}/src/test/java"/>
+		<mkdir dir="${WS_DIR}/${PROJECT_NAME}/src/test/resources"/>
+		<mkdir dir="${WS_DIR}/${PROJECT_NAME}/src/test/local"/>
+		<mkdir dir="${WS_DIR}/${PROJECT_NAME}/src/test/local-resources"/>
+		<mkdir dir="${WS_DIR}/${PROJECT_NAME}/src/test/properties"/>
+		<mkdir dir="${WS_DIR}/${PROJECT_NAME}/files"/>
+		<copy todir="${WS_DIR}/${PROJECT_NAME}" overwrite="true">
+			<fileset dir="${basedir}/templates/project"/>
+		</copy>
+		<move file="${basedir}/tmp/pom.xml" todir="${WS_DIR}/${PROJECT_NAME}" overwrite="true"/>
+		<move file="${basedir}/tmp/classpath.cfg" todir="${WS_DIR}/${PROJECT_NAME}/files" overwrite="true"/>
+		<move todir="${WS_DIR}/${PROJECT_NAME}" overwrite="true">
+			<fileset dir="${basedir}/tmp">
+				<include name="**/*.properties"/>
+				<exclude name="**/*tmp.*"/>
+			</fileset>
+		</move>
+	</target>
+	<target name="createCfgFile"  description="Target to create the classpath.cfg file for the Tests.">
+		<loadfile property="cfgfile" srcfile="${sterling.cfg.file}"/>
+		<createCfgFile cfgval="${cfgfile}" property="CFGPATH" projectdir="${WS_DIR}/${PROJECT_NAME}"/>
+	</target>
+
+	<target name="addJarsToCfg" description="Macro to add JARs to the cfg file.">
+		<foreach param="file" target="doStuffWithFile">
+			<param name="directoryName" value="${directory}"/>
+			<param name="cfgfile" value="${cfgfile}"/>
+			<path>
+				<fileset dir="${directory}">
+					<filename name="**/*" />
+				</fileset>
+			</path>
+		</foreach>
+	</target>
+	<target name="wrapperBeforeDoStuffWithFile">
+		<basename property="dirName" file="${dirName}"/>
+		<foreach param="file" target="doStuffWithFile">
+			<param name="directoryName" value="${dirName}"/>
+			<param name="cfgfile" value="${cfgfile}"/>
+			<path>
+				<fileset dir="${dirName}">
+					<filename name="**/*.jar" />
+				</fileset>
+			</path>
+		</foreach>
+	</target>
+	<target name="doStuffWithFile" description="Helper Target.">
+		<basename property="fileName" file="${file}" />
+		<basename property="directoryName" file="${directoryName}" />
+		<echo file="${tmp.cfg.file}" append="true">VENDOR_FILE=${directoryName}${file.separator}${fileName}${line.separator}</echo>
+	</target>
+</project>
+

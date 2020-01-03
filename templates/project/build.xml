@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project basedir="." default="all" name="Create Package for Deployment">
+	<tstamp>
+		<format property="TODAY" pattern="ddMMyyyy" locale="en,GB" />
+	</tstamp>
+	<property file="build.properties" />
+	<property name="tmp.dir" value="${basedir}/tmp" />
+	<property name="isccsclassesdir" value="${tmp.dir}/repository/eardata/isccs/war/WEB-INF/classes" />
+	<property name="wscclassesdir" value="${tmp.dir}/repository/eardata/wsc/war/WEB-INF/classes" />
+	<property name="extensionsdir" value="${tmp.dir}/extensions" />
+	<property name="jarsdir" value="${tmp.dir}/jar/Utilities" />
+
+	<target name="all" depends="clean,svnlog,checkout-codebase,clean-src,createStructure,mvnbuild" />
+	<target name="codebuild" depends="clean,checkout-codebase,clean-src,createStructure,mvnbuild"/>
+	<target name="archive">
+		<zip destfile="${basedir}/archive/archive_${TODAY}.zip" basedir="${basedir}/output" update="no" zip64Mode="always" />
+	</target>
+	<target name="clean">
+		<delete dir="${tmp.dir}" />
+		<delete dir="${basedir}/output" />
+		<mkdir dir="${basedir}/output" />
+	</target>
+
+	<target name="clean-src" if="${checkout}">
+		<delete dir="${basedir}/src/main/java" />
+		<delete dir="${basedir}/src/test/java" />
+		<delete dir="${basedir}/src/test/resources" />
+		<!--<delete dir="${basedir}/src/test/local" />
+		<delete dir="${basedir}/src/test/local-resources" />-->
+	</target>
+
+	<target name="createStructure">
+		<mkdir dir="${isccsclassesdir}" />
+		<mkdir dir="${wscclassesdir}" />
+		<mkdir dir="${extensionsdir}" />
+		<mkdir dir="${jarsdir}" />
+	</target>
+
+	<target name="mvnbuild" if="${compile.req}">
+		<copy todir="${basedir}/src/main/java" overwrite="true" failonerror="true">
+			<fileset dir="${checkout.dir}/petco-custom/src">
+			</fileset>
+		</copy>
+		<copy todir="${basedir}/src/test/java" overwrite="true" failonerror="true">
+			<fileset dir="${checkout.dir}/petco-custom/test">
+			</fileset>
+		</copy>
+		<copy todir="${basedir}/src/test/resources" overwrite="true" failonerror="true">
+			<fileset dir="${checkout.dir}/petco-custom/test-resources">
+			</fileset>
+		</copy>
+		<exec dir="${basedir}" executable="cmd" failonerror="true">
+			<arg value="/C" />
+			<arg value="${maven.home}\bin\mvn.bat -DskipTests" />
+			<arg line="clean install site" />
+			<env key="JAVA_HOME" value="${java.home}" />
+		</exec>
+
+	</target>
+
+	<target name="movefiles">
+		<copy tofile="${jarsdir}/${to.jar}" file="${install.dir}/jar/petco/1_0/${from.jar}" overwrite="true">
+		</copy>
+		<copy todir="${isccsclassesdir}" overwrite="true">
+			<fileset dir="${basedir}/target/classes" />
+		</copy>
+		<copy todir="${wscclassesdir}" overwrite="true">
+			<fileset dir="${basedir}/target/classes" />
+		</copy>
+		<copy todir="${extensionsdir}" overwrite="true">
+			<fileset dir="${checkout.dir}/extensions" />
+		</copy>
+	</target>
+	<target name="package" depends="movefiles">
+		<zip destfile="${basedir}/output/${tmp.package}" basedir="${basedir}/tmp" update="no" zip64Mode="always" />
+		<zip destfile="${basedir}/output/site_${TODAY}.zip" basedir="${basedir}/target/site" update="no" zip64Mode="always" />
+	</target>
+
+	<target name="svnlog">
+		<tstamp>
+			<format property="TODAY_SVN" pattern="yyyy-MM-dd" locale="en,GB" />
+		</tstamp>
+		<tstamp>
+			<format property="TOMORROW_SVN" pattern="yyyy-MM-dd" locale="en,GB" offset="24" unit="hour" />
+		</tstamp>
+		<exec dir="${svn.fetch.dir}" executable="cmd" output="${basedir}/output/svnlog.xml">
+			<arg value="/C" />
+			<arg value="${svn.kit.dir}/bin/jsvn" />
+			<arg line=" --xml -v -r {${TODAY_SVN}}:{${TOMORROW_SVN}} log ${svn.server.url}/${svn.module}/${svn.release}" />
+			<arg line="--username ${svn.username}" />
+			<arg line="--password ${svn.password}" />
+			<arg value="--trust-server-cert" />
+			<arg value="--non-interactive" />
+			<env key="JAVA_HOME" value="${java.home}" />
+		</exec>
+		<xslt in="${basedir}/output/svnlog.xml" extension=".html" style="${basedir}/svn.xsl" out="output/svn_${TODAY}.html">
+			<outputproperty name="method" value="html" />
+		</xslt>
+	</target>
+
+	<!-- checkout-codebase -->
+	<target name="checkout-codebase" description="Checkout project files from svn" depends="cvs-clean" if="${checkout}">
+		<echo message="Checkout from SVN url: ${svn.server.url}/${svn.module}/${svn.release}" />
+		<exec dir="${svn.fetch.dir}" executable="cmd">
+			<arg value="/C" />
+			<arg value="${svn.kit.dir}/bin/jsvn" />
+			<arg line="${svn.command} ${svn.server.url}/${svn.module}/${svn.release}/petco-custom" />
+			<arg line="--username ${svn.username}" />
+			<arg line="--password ${svn.password}" />
+			<arg value="--trust-server-cert" />
+			<arg value="--non-interactive" />
+			<env key="JAVA_HOME" value="${java.home}" />
+		</exec>
+		<antcall target="non-code-checkout" />
+		<echo>Checkout done from svn...</echo>
+	</target>
+	<target name="non-code-checkout" if="${fullcheckout}">
+		<exec dir="${svn.fetch.dir}" executable="cmd">
+			<arg value="/C" />
+			<arg value="${svn.kit.dir}/bin/jsvn" />
+			<arg line="${svn.command} ${svn.server.url}/${svn.module}/${svn.release}/extensions" />
+			<arg line="--username ${svn.username}" />
+			<arg line="--password ${svn.password}" />
+			<arg value="--trust-server-cert" />
+			<arg value="--non-interactive" />
+			<env key="JAVA_HOME" value="${java.home}" />
+		</exec>
+		<exec dir="${svn.fetch.dir}" executable="cmd">
+			<arg value="/C" />
+			<arg value="${svn.kit.dir}/bin/jsvn" />
+			<arg line="${svn.command} ${svn.server.url}/${svn.module}/${svn.release}/properties" />
+			<arg line="--username ${svn.username}" />
+			<arg line="--password ${svn.password}" />
+			<arg value="--trust-server-cert" />
+			<arg value="--non-interactive" />
+			<env key="JAVA_HOME" value="${java.home}" />
+		</exec>
+		<exec dir="${svn.fetch.dir}" executable="cmd">
+			<arg value="/C" />
+			<arg value="${svn.kit.dir}/bin/jsvn" />
+			<arg line="${svn.command} ${svn.server.url}/${svn.module}/${svn.release}/repository" />
+			<arg line="--username ${svn.username}" />
+			<arg line="--password ${svn.password}" />
+			<arg value="--trust-server-cert" />
+			<arg value="--non-interactive" />
+			<env key="JAVA_HOME" value="${java.home}" />
+		</exec>
+		<exec dir="${svn.fetch.dir}" executable="cmd">
+			<arg value="/C" />
+			<arg value="${svn.kit.dir}/bin/jsvn" />
+			<arg line="${svn.command} ${svn.server.url}/${svn.module}/${svn.release}/resources" />
+			<arg line="--username ${svn.username}" />
+			<arg line="--password ${svn.password}" />
+			<arg value="--trust-server-cert" />
+			<arg value="--non-interactive" />
+			<env key="JAVA_HOME" value="${java.home}" />
+		</exec>
+	</target>
+	<target name="cvs-clean" description="Clean CVS directory" if="${checkout}">
+		<mkdir dir="${svn.fetch.dir}" />
+		<echo message="Deleting the CVS Working directories ....." />
+		<delete includeEmptyDirs="true">
+			<fileset dir="${svn.fetch.dir}" includes="**/*" defaultexcludes="no" />
+		</delete>
+	</target>
+</project>
+

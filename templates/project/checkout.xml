@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project basedir="." default="checkout-codebase" name="Create Package for Deployment">
+	<property file="build.properties" />
+	<!-- Task, definition required to use SVN Checkout. -->
+	<typedef resource="org/tigris/subversion/svnant/svnantlib.xml" />
+
+	<!-- checkout-codebase -->
+	<target name="checkout-codebase" description="Checkout project files from svn"
+		depends="cvs-clean">
+		<echo>Checkout from SVN url
+			${svn.server.url}/${svn.module}/${svn.release}
+		</echo>
+		<!-- <svn username="${svn.username}" password="${svn.password}"> -->
+		<!-- <checkout url="${svn.server.url}/${svn.module}/${svn.release}" -->
+		<!-- revision="${svn.revision}" destpath="${svn.fetch.dir}" /> -->
+		<!-- </svn> -->
+		<exec dir="${svn.fetch.dir}" executable="cmd">
+			<arg value="/C" />
+			<arg value="${svn.kit.dir}/bin/jsvn" />
+			<arg line="co ${svn.server.url}/${svn.module}/${svn.release}/extensions" />
+			<arg line="--username ${svn.username}" />
+			<arg line="--password ${svn.password}" />
+			<arg value="--trust-server-cert" />
+			<arg value="--non-interactive" />
+			<env key="JAVA_HOME" value="${java.home}" />
+		</exec>
+		<exec dir="${svn.fetch.dir}" executable="cmd">
+			<arg value="/C" />
+			<arg value="${svn.kit.dir}/bin/jsvn" />
+			<arg line="co ${svn.server.url}/${svn.module}/${svn.release}/petco-custom" />
+			<arg line="--username ${svn.username}" />
+			<arg line="--password ${svn.password}" />
+			<arg value="--trust-server-cert" />
+			<arg value="--non-interactive" />
+			<env key="JAVA_HOME" value="${java.home}" />
+		</exec>
+		<exec dir="${svn.fetch.dir}" executable="cmd">
+			<arg value="/C" />
+			<arg value="${svn.kit.dir}/bin/jsvn" />
+			<arg line="co ${svn.server.url}/${svn.module}/${svn.release}/properties" />
+			<arg line="--username ${svn.username}" />
+			<arg line="--password ${svn.password}" />
+			<arg value="--trust-server-cert" />
+			<arg value="--non-interactive" />
+			<env key="JAVA_HOME" value="${java.home}" />
+		</exec>
+		<exec dir="${svn.fetch.dir}" executable="cmd">
+			<arg value="/C" />
+			<arg value="${svn.kit.dir}/bin/jsvn" />
+			<arg line="co ${svn.server.url}/${svn.module}/${svn.release}/repository" />
+			<arg line="--username ${svn.username}" />
+			<arg line="--password ${svn.password}" />
+			<arg value="--trust-server-cert" />
+			<arg value="--non-interactive" />
+			<env key="JAVA_HOME" value="${java.home}" />
+		</exec>
+		<exec dir="${svn.fetch.dir}" executable="cmd">
+			<arg value="/C" />
+			<arg value="${svn.kit.dir}/bin/jsvn" />
+			<arg line="co ${svn.server.url}/${svn.module}/${svn.release}/resources" />
+			<arg line="--username ${svn.username}" />
+			<arg line="--password ${svn.password}" />
+			<arg value="--trust-server-cert" />
+			<arg value="--non-interactive" />
+			<env key="JAVA_HOME" value="${java.home}" />
+		</exec>
+		<exec dir="${svn.fetch.dir}" executable="cmd">
+			<arg value="/C" />
+			<arg value="${svn.kit.dir}/bin/jsvn" />
+			<arg line="co ${svn.server.url}/${svn.module}/${svn.release}/mcxml" />
+			<arg line="--username ${svn.username}" />
+			<arg line="--password ${svn.password}" />
+			<arg value="--trust-server-cert" />
+			<arg value="--non-interactive" />
+			<env key="JAVA_HOME" value="${java.home}" />
+		</exec>
+		<echo>Checkout done from svn...</echo>
+	</target>
+	<target name="cvs-clean" description="Clean CVS directory">
+		<mkdir dir="${svn.fetch.dir}" />
+		<echo message="Deleting the CVS Working directories ....." />
+		<delete includeEmptyDirs="true">
+			<fileset dir="${svn.fetch.dir}" includes="**/*"
+				defaultexcludes="no" />
+		</delete>
+	</target>
+
+	<!-- update-codebase -->
+	<target name="update-codebase" description="Update codebase from svn">
+		<svn username="${svn.username}" password="${svn.password}">
+			<update revision="HEAD" recurse="true" dir="${svn.fetch.dir}" />
+		</svn>
+	</target>
+</project>
